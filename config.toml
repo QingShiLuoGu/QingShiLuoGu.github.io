@@ -1,0 +1,4 @@
+baseURL = "http://example.org/"
+languageCode = "en-us"
+title = "青石落鼓的博客"
+theme = "maupassant"
