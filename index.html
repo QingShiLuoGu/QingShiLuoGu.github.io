@@ -74,22 +74,6 @@
                     
 <div class="res-cons">
     
-    <article class="post">
-        <header>
-            <h1 class="post-title">
-                <a href="/posts/second_post/" title="okhttp源码分析">okhttp源码分析</a>
-            </h1>
-        </header>
-        <date class="post-meta meta-date">
-            2020年12月5日
-        </date>
-        
-        <div class="post-content">
-            疑问点: 在 Snapshot构造时以及在Editor.newSource()方法中都可以生成新的读取流,但是只有Snapshot构造时的流是有计数的(lockingSourceCount++),Editor.newSource()却没有. 1.client.newCall(request).execute() 的流程 sequenceDiagram participant client.newCall() participant RealCall participant RealInterceptorChain client.newCall() -&gt;&gt; RealCall:execute() RealCall -&gt;&gt; RealCall:client.dispatcher.executed(this) activate RealCall deactivate RealCall RealCall……
-        </div>
-        <p class="readmore"><a href="/posts/second_post/">阅读全文</a></p>
-    </article>
-    
     
 
 
@@ -121,6 +105,11 @@
     <script src='/js/douban.js'></script>
 
 
+<script src="https://mermaidjs.github.io/scripts/mermaid.min.js"></script>
+  <script>
+	          mermaid.initialize({ startOnLoad: true });
+  </script>
+
                 </div>
 
                 <div id="secondary">
@@ -136,10 +125,6 @@
     <section class="widget">
         <h3 class="widget-title">最近文章</h3>
 <ul class="widget-list">
-    
-    <li>
-        <a href="/posts/second_post/" title="okhttp源码分析">okhttp源码分析</a>
-    </li>
     
 </ul>
     </section>

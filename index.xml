@@ -5,16 +5,6 @@
     <link>/</link>
     <description>Recent content on 青石落鼓的博客</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>zh-CN</language>
-    <lastBuildDate>Sat, 05 Dec 2020 18:36:08 +0800</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>okhttp源码分析</title>
-      <link>/posts/second_post/</link>
-      <pubDate>Sat, 05 Dec 2020 18:36:08 +0800</pubDate>
-      
-      <guid>/posts/second_post/</guid>
-      <description>疑问点: 在 Snapshot构造时以及在Editor.newSource()方法中都可以生成新的读取流,但是只有Snapshot构造时的流是有计数的(lockingSourceCount++),Editor.newSource()却没有. 1.client.newCall(request).execute() 的流程 sequenceDiagram participant client.newCall() participant RealCall participant RealInterceptorChain client.newCall() -&amp;gt;&amp;gt; RealCall:execute() RealCall -&amp;gt;&amp;gt; RealCall:client.dispatcher.executed(this) activate RealCall deactivate RealCall RealCall</description>
-    </item>
-    
+    <language>zh-CN</language><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
