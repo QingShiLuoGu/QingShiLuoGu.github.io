@@ -9,8 +9,8 @@
     <meta name="referrer" content="no-referrer-when-downgrade">
     
 
-    <title>一下午的时间用来自建博客的感言 | 青石落鼓的博客</title>
-    <meta property="og:title" content="一下午的时间用来自建博客的感言 - 青石落鼓的博客">
+    <title>okhttp源码分析 | 青石落鼓的博客</title>
+    <meta property="og:title" content="okhttp源码分析 - 青石落鼓的博客">
     <meta property="og:type" content="article">
         
     <meta property="article:published_time" content='2020-12-05T18:36:08&#43;08:00'>
@@ -19,7 +19,7 @@
     <meta property="article:modified_time" content='2020-12-05T18:36:08&#43;08:00'>
         
     <meta name="Keywords" content="">
-    <meta name="description" content="一下午的时间用来自建博客的感言">
+    <meta name="description" content="okhttp源码分析">
         
     <meta name="author" content="青石落鼓">
     <meta property="og:url" content="/posts/second_post/">
@@ -141,7 +141,14 @@
 <div class="post-toc" style="position: absolute; top: 188px;">
     <h2 class="post-toc-title">文章目录</h2>
     <div class="post-toc-content">
-        <nav id="TableOfContents"></nav>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1类图">1.类图</a></li>
+    <li><a href="#2写缓存即获取输入流">2.写缓存:即获取输入流</a></li>
+    <li><a href="#3entry分析">3.Entry分析</a></li>
+    <li><a href="#4-snapshot分析">4. Snapshot分析</a></li>
+  </ul>
+</nav>
     </div>
 </div>
 <script type="text/javascript">
@@ -173,7 +180,7 @@
 </script>
     <article class="post">
         <header>
-            <h1 class="post-title">一下午的时间用来自建博客的感言</h1>
+            <h1 class="post-title">okhttp源码分析</h1>
         </header>
         <date class="post-meta meta-date">
             2020年12月5日
@@ -187,10 +194,280 @@
         
         
         <div class="post-content">
-            <p>搞了一下午，主页可以看到了，但是test文章没有显示。</p>
-<p>时间那么珍贵，这一下午我用来写一篇博客不香吗？</p>
-<p>折腾东西这种事还是需要时间多的人来搞。</p>
-<p>draft: false ,改一下又可以了&hellip;.</p>
+            <p>疑问点:</p>
+<ol>
+<li>在 Snapshot构造时以及在Editor.newSource()方法中都可以生成新的读取流,但是只有Snapshot构造时的流是有计数的(lockingSourceCount++),Editor.newSource()却没有.</li>
+</ol>
+<h1 id="1clientnewcallrequestexecute-的流程">1.client.newCall(request).execute() 的流程</h1>
+<pre><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+	participant client.newCall()
+    participant RealCall
+    participant RealInterceptorChain
+    
+   	
+   	client.newCall() -&gt;&gt; RealCall:execute()
+   	RealCall -&gt;&gt; RealCall:client.dispatcher.executed(this)
+   	activate RealCall
+	deactivate RealCall	
+	
+   	RealCall -&gt;&gt; RealCall:getResponseWithInterceptorChain()
+   	activate RealCall
+   		RealCall -&gt;&gt; RealInterceptorChain:proceed()
+   		activate RealInterceptorChain
+   			RealInterceptorChain --&gt;&gt; RealCall:Response
+   		deactivate RealInterceptorChain
+	deactivate RealCall
+
+   	RealCall -&gt;&gt; RealCall:client.dispatcher.finished(this)
+   	activate RealCall
+	deactivate RealCall
+    
+   	RealCall --&gt;&gt; client.newCall():Response
+
+</code></pre><h1 id="2realinterceptorchain-拦截器的链式调用">2.RealInterceptorChain 拦截器的链式调用</h1>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">RealInterceptorChain.proceed()
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">    <span style="color:#000;font-weight:bold">val</span> interceptors = mutableListOf&lt;Interceptor&gt;()
+    interceptors <span style="color:#000;font-weight:bold">+=</span> client.interceptors
+    interceptors <span style="color:#000;font-weight:bold">+=</span> RetryAndFollowUpInterceptor(client)
+    interceptors <span style="color:#000;font-weight:bold">+=</span> BridgeInterceptor(client.cookieJar)
+    interceptors <span style="color:#000;font-weight:bold">+=</span> CacheInterceptor(client.cache)
+    interceptors <span style="color:#000;font-weight:bold">+=</span> ConnectInterceptor
+    <span style="color:#000;font-weight:bold">if</span> (!forWebSocket) {
+      interceptors <span style="color:#000;font-weight:bold">+=</span> client.networkInterceptors
+    }
+    interceptors <span style="color:#000;font-weight:bold">+=</span> CallServerInterceptor(forWebSocket)
+
+    <span style="color:#000;font-weight:bold">val</span> chain = RealInterceptorChain(
+        call = <span style="color:#000;font-weight:bold">this</span>,
+        interceptors = interceptors,
+        index = <span style="color:#099">0</span>,
+        exchange = <span style="color:#000;font-weight:bold">null</span>,
+        request = originalRequest,
+        connectTimeoutMillis = client.connectTimeoutMillis,
+        readTimeoutMillis = client.readTimeoutMillis,
+        writeTimeoutMillis = client.writeTimeoutMillis
+    )
+	<span style="color:#000;font-weight:bold">val</span> response = chain.proceed(originalRequest)
+</code></pre></td></tr></table>
+</div>
+</div><pre><code class="language-mermaid" data-lang="mermaid">graph BT
+	client.interceptors --&gt; |Request| RetryAndFollowUpInterceptor
+	RetryAndFollowUpInterceptor --&gt; |Request| BridgeInterceptor
+	BridgeInterceptor --&gt; |Request| CacheInterceptor
+	CacheInterceptor --&gt; |Request| ConnectInterceptor
+	ConnectInterceptor --&gt; |Request| client.networkInterceptors
+	client.networkInterceptors --&gt; |Request| CallServerInterceptor
+	
+	CallServerInterceptor --&gt; |Response| client.networkInterceptors
+	client.networkInterceptors --&gt; |Response| ConnectInterceptor
+	ConnectInterceptor --&gt; |Response| CacheInterceptor
+	CacheInterceptor --&gt; |Response| BridgeInterceptor
+	BridgeInterceptor --&gt; |Response| RetryAndFollowUpInterceptor
+	RetryAndFollowUpInterceptor --&gt; |Response| client.interceptors
+</code></pre><h1 id="3disklrucache">3.DiskLruCache</h1>
+<h2 id="1类图">1.类图</h2>
+<pre><code class="language-mermaid" data-lang="mermaid">classDiagram
+class DiskLruCache{
+	fileSystem: FileSystem
+	directory: File
+	appVersion: Int
+	valueCount: Int
+	maxSize: Long
+	taskRunner: TaskRunner
+	journalFile: File
+	journalFileTmp: File
+	journalFileBackup: File
+	size: Long
+	journalWriter: BufferedSink?
+	lruEntries = LinkedHashMap&lt;String, Entry&gt;
+	redundantOpCount: Int
+	hasJournalErrors: Boolean = false
+	civilizedFileSystem: Boolean = false
+	initialized: Boolean = false
+	closed: Boolean = false
+	mostRecentTrimFailed: Boolean = false
+	mostRecentRebuildFailed: Boolean = false
+	nextSequenceNumber: Long = 0
+	cleanupQueue TaskQueue
+	
+	initialize()
+	get(key: String): Snapshot?
+	edit(key: String, expectedSequenceNumber: Long): Editor?
+	size(): Long
+	remove(key: String): Boolean
+	flush()
+	isClosed(): Boolean
+	close()
+	trimToSize()
+	delete()
+	evictAll()
+	snapshots(): MutableIterator&lt;Snapshot&gt;
+}
+</code></pre><pre><code class="language-mermaid" data-lang="mermaid">classDiagram
+
+class Entry{
+	key: String
+	lengths: LongArray
+	cleanFiles: mutableListOf&lt;File&gt;
+	readable: Boolean
+	zombie: Boolean
+	currentEditor: Editor?
+	lockingSourceCount: int
+	sequenceNumber: Long
+	
+	setLengths(strings: List&lt;String&gt;)
+	writeLengths(writer: BufferedSink)
+	invalidLengths(strings: List&lt;String&gt;): Nothing
+	snapshot(): Snapshot?
+	newSource(index: Int): Source
+}
+
+class Editor{
+	entry: Entry
+	written: BooleanArray
+	done: Boolean
+	
+	detach()
+	newSource(index: Int): Source?
+	newSink(index: Int): Sink
+	commit()
+	abort()
+}
+
+class Snapshot{
+	key: String
+	sequenceNumber: Long
+	sources: List&lt;Source&gt;
+	lengths: LongArray
+	
+	key(): String
+	edit(): Editor?
+	getSource(index: Int): Source
+	getLength(index: Int): Long
+	close()
+}
+</code></pre><h2 id="2写缓存即获取输入流">2.写缓存:即获取输入流</h2>
+<pre><code class="language-mermaid" data-lang="mermaid">sequenceDiagram
+	participant DiskLruCache
+	participant Entry
+	participant Snapshot
+	participant Editor
+	
+	DiskLruCache -&gt;&gt; DiskLruCache:entry = lruEntries[key]
+	Entry -&gt;&gt; Snapshot:snapshot()
+	Snapshot -&gt;&gt; Snapshot:edit(): Editor?
+	Snapshot -&gt;&gt; Editor:newSource(index: Int): Source?
+	Snapshot -&gt;&gt; Editor:newSink(index: Int): Sink
+	
+</code></pre><h2 id="3entry分析">3.Entry分析</h2>
+<p>Entry代表DiskLruCache中一项缓存的实体,存储在lruEntries(LinkedHashMap)中.</p>
+<p>属性分析：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">属性名</th>
+<th style="text-align:left">解析</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">key: String</td>
+<td style="text-align:left">该缓存项对应的key</td>
+</tr>
+<tr>
+<td style="text-align:left">lengths: LongArray</td>
+<td style="text-align:left">文件大小的list</td>
+</tr>
+<tr>
+<td style="text-align:left">cleanFiles: mutableListOf&lt;File&gt;</td>
+<td style="text-align:left">代表干净的文件列表</td>
+</tr>
+<tr>
+<td style="text-align:left">cleanFiles: mutableListOf&lt;File&gt;</td>
+<td style="text-align:left">代表正在被写入的文件列表,写入完成后会重命名 cleanFile.</td>
+</tr>
+<tr>
+<td style="text-align:left">readable: Boolean</td>
+<td style="text-align:left">表示该 Entry是否已经发布,只有已发布的entry才是可以被读取的,新生成的entry对象默认为false.在初始化日志的时候如果一项缓存是CLEAN的,或者缓存被写入成功了则会为true.</td>
+</tr>
+<tr>
+<td style="text-align:left">currentEditor: Editor?</td>
+<td style="text-align:left">表示与此entry绑定的editor</td>
+</tr>
+<tr>
+<td style="text-align:left">lockingSourceCount: Int</td>
+<td style="text-align:left">读取流的数量,为0时代表没有谁在读取该entry</td>
+</tr>
+<tr>
+<td style="text-align:left">zombie: Boolean</td>
+<td style="text-align:left">当需要删除某个entry的时候发现其读取流数目不为0或者 currentEditor不为空,就不会马上删除它,而是标记其为 zombie状态,在后续合适的时候再来做删除操作.</td>
+</tr>
+<tr>
+<td style="text-align:left">sequenceNumber: Long</td>
+<td style="text-align:left">每次对该entry写入成功后会更新该值,Snapshot也会复制该值,当 snapshot的该值与entry的该值不同时,可以说明该 snapshot已经无效了.</td>
+</tr>
+</tbody>
+</table>
+<p>读缓存时,通过 cleanFiles 拿到输出流.写缓存时,通过</p>
+<h2 id="4-snapshot分析">4. Snapshot分析</h2>
+<p>DiskLruCache对外提供的缓存实体类不是 Entry,Entry只在内部使用.
+DiskLruCache对外提供某项缓存的 Snapshot(快照)或者 Editor.</p>
+<p>属性分析:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">属性名</th>
+<th style="text-align:left">解析</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">key: String</td>
+<td style="text-align:left">对应 Entry.key</td>
+</tr>
+<tr>
+<td style="text-align:left">sequenceNumber: Long</td>
+<td style="text-align:left">构造时复制了 Entry.sequenceNumber,可以和Entry.sequenceNumber比较,证明该快照是否是该缓存项的最新状态. 如果快照不是最新的状态,Snapshot.edit()方法会返回null.</td>
+</tr>
+<tr>
+<td style="text-align:left">sources: List&lt;Source&gt;</td>
+<td style="text-align:left">构造 Snapshot时会自动打开缓存文件的读取流,存放在 sources中.</td>
+</tr>
+</tbody>
+</table>
 
         </div>
 
@@ -263,7 +540,7 @@
 <ul class="widget-list">
     
     <li>
-        <a href="/posts/second_post/" title="一下午的时间用来自建博客的感言">一下午的时间用来自建博客的感言</a>
+        <a href="/posts/second_post/" title="okhttp源码分析">okhttp源码分析</a>
     </li>
     
 </ul>

@@ -8,12 +8,12 @@
     <language>zh-CN</language>
     <lastBuildDate>Sat, 05 Dec 2020 18:36:08 +0800</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>一下午的时间用来自建博客的感言</title>
+      <title>okhttp源码分析</title>
       <link>/posts/second_post/</link>
       <pubDate>Sat, 05 Dec 2020 18:36:08 +0800</pubDate>
       
       <guid>/posts/second_post/</guid>
-      <description>搞了一下午，主页可以看到了，但是test文章没有显示。 时间那么珍贵，这一下午我用来写一篇博客不香吗？ 折腾东西这种事还是需要时间多的人来搞。 draft: false ,改一下又可以了&amp;hellip;.</description>
+      <description>疑问点: 在 Snapshot构造时以及在Editor.newSource()方法中都可以生成新的读取流,但是只有Snapshot构造时的流是有计数的(lockingSourceCount++),Editor.newSource()却没有. 1.client.newCall(request).execute() 的流程 sequenceDiagram participant client.newCall() participant RealCall participant RealInterceptorChain client.newCall() -&amp;gt;&amp;gt; RealCall:execute() RealCall -&amp;gt;&amp;gt; RealCall:client.dispatcher.executed(this) activate RealCall deactivate RealCall RealCall</description>
     </item>
     
   </channel>
